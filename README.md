@@ -1,1 +1,1 @@
-First time doing anything like this.
+First time doing this.
