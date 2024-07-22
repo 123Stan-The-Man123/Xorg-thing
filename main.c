@@ -1,33 +1,40 @@
+#include <stdio.h>
+#include <unistd.h>
 #include <X11/Xlib.h>
 
+#define NIL (0)
+
 int main(void) {
-    Display *display = XOpenDisplay(":1");
+    Display *display = XOpenDisplay(NULL);
 
-    int screen = DefaultScreen(display);
-    Window root_window = RootWindow(display, 0);
-    unsigned long valuemask = CWBackPixel | CWBorderPixel | CWEventMask;
-    XSetWindowAttributes window_attributes;
+    if (display == NULL) {
+        printf("Could not open display.\n");
+        return 1;
+    }
 
-    window_attributes.background_pixel = WhitePixel(display, 0);
-    window_attributes.border_pixel = BlackPixel(display, 0);
-    window_attributes.event_mask = ExposureMask | KeyPressMask;
+    Window new_window = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, 500, 300, 0, BlackPixel(display, DefaultScreen(display)), BlackPixel(display, DefaultScreen(display)));
 
-    Window new_window = XCreateWindow(display, root_window, 500, 500, 500, 300, 10, CopyFromParent, InputOutput, CopyFromParent, valuemask, &window_attributes);
-
-    XStoreName(display, new_window, "My First Window");
+    XSelectInput(display, new_window, StructureNotifyMask);
 
     XMapWindow(display, new_window);
 
-    XEvent event;
-    while (1) {
-        XNextEvent(display, &event);
-        if (event.type == Expose) {
-            XFillRectangle(display, new_window, DefaultGC(display, screen), 20, 20, 10, 10);
-        }
-        else if (event.type == KeyPress) {
+    GC gc = XCreateGC(display, new_window, 0, NIL);
+
+    XSetForeground(display, gc, WhitePixel(display, DefaultScreen(display)));
+
+    for (;;) {
+        XEvent e;
+        XNextEvent(display, &e);
+        if (e.type == MapNotify) {
             break;
         }
     }
+
+    XDrawLine(display, new_window, gc, 10, 60, 180, 20);
+
+    XFlush(display);
+
+    sleep(10);
 
     XCloseDisplay(display);
     return 0;
