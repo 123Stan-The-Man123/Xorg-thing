@@ -1,41 +1,33 @@
 #include <stdio.h>
-#include <unistd.h>
 #include <X11/Xlib.h>
 
-#define NIL (0)
-
 int main(void) {
-    Display *display = XOpenDisplay(NULL);
+    Display *dpy = XOpenDisplay(NULL);
 
-    if (display == NULL) {
+    if (dpy == NULL) {
         printf("Could not open display.\n");
         return 1;
     }
 
-    Window new_window = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, 500, 300, 0, BlackPixel(display, DefaultScreen(display)), BlackPixel(display, DefaultScreen(display)));
+    int scr = XDefaultScreen(dpy);
 
-    XSelectInput(display, new_window, StructureNotifyMask);
+    Window w = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0, 0, 500, 300, 0, WhitePixel(dpy, scr), BlackPixel(dpy, scr));
 
-    XMapWindow(display, new_window);
+    XSelectInput(dpy, w, ExposureMask | KeyPressMask);
+    
+    XMapWindow(dpy, w);
 
-    GC gc = XCreateGC(display, new_window, 0, NIL);
-
-    XSetForeground(display, gc, WhitePixel(display, DefaultScreen(display)));
-
-    for (;;) {
+    for(;;) {
         XEvent e;
-        XNextEvent(display, &e);
-        if (e.type == MapNotify) {
+        XNextEvent(dpy, &e);
+        if (e.type == Expose) {
+            XFillRectangle(dpy, w, DefaultGC(dpy, scr), 20, 20, 10, 10);
+        }
+        if (e.type == KeyPress) {
             break;
         }
     }
 
-    XDrawLine(display, new_window, gc, 10, 60, 180, 20);
-
-    XFlush(display);
-
-    sleep(10);
-
-    XCloseDisplay(display);
+    XCloseDisplay(dpy);
     return 0;
 }
